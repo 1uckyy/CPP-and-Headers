@@ -18,7 +18,7 @@ fun fileToListStrings fileName =
         strlist
     end;
 
-val file = fileToListStrings "asd.cpp";
+val file = fileToListStrings "file.cpp";
 
 (*выделение первого слова в строке*)
 fun fw(nil) = nil
@@ -42,10 +42,28 @@ fun sn(nil) = nil
 |   sn(h::t) = h :: sn(t);
 val slashN = implode o sn o explode;
 
-fun addSemicolon(headerStream, str) =
+(*выделение типов параметров функции*)
+fun tp(nil,0) = nil
+|   tp(#"("::t,0) = tp(t,1)
+|   tp(#","::t,0) = #"," :: tp(t,1)
+|   tp(h::t,0) = tp(t,0)
+|   tp(#")"::t,1) = nil
+|   tp(#" "::t,1) = tp(t,0)
+|   tp(h::t,1) = h :: tp(t,1);
+fun typeParameters(str) = 
     let
+        val strToArray = explode str
+        val charsArray = tp(strToArray, 0)
+        val arrayToStr = implode charsArray
+    in
+        arrayToStr
+end;
+
+fun addSemicolon(headerStream, stream, str) =
+    let
+        val _ = TextIO.output(stream, "\n"^str^"\n")
         val newStr = slashN str
-        val _ = TextIO.output(headerStream, newStr^";\n")
+        val _ = TextIO.output(headerStream, "\n"^newStr^";\n")
     in
         1
 end;
@@ -74,11 +92,11 @@ end;
 
 fun stringToHeader(headerStream, stream, str) =
     let
-        val _ = TextIO.output(stream, str)
         val atoarray = explode str
         val lastchar = lc(atoarray, #"f", #"f")
     in
-        if lastchar = #";" then stringToStrOutputEnd(headerStream, str) else addSemicolon(headerStream, str)
+        if lastchar = #";" then stringToStrOutputEnd(headerStream, "\n"^str)
+        else addSemicolon(headerStream, stream, nameMethod(str)^"("^typeParameters(str)^")")
 end;
 
 fun checkLastChar(a) =
@@ -93,6 +111,7 @@ end;
 
 val stream = TextIO.openOut("add.cpp")
 val headerStream = TextIO.openOut("add.h")
+val _ = TextIO.output(headerStream, "#ifndef ADD_H\n#define ADD_H\n");
 val mainStream = TextIO.openOut("main.cpp")
 val _ = TextIO.output(mainStream, "#include \"add.h\"\n");
 fun find(nil,0) = nil
@@ -100,7 +119,15 @@ fun find(nil,0) = nil
         (case firstword a
         of "#include" => find(b, stringToStrOutputEnd(mainStream, a))
         | "int" => if (checkLastChar(a) = 1) then find(b, stringToHeader(headerStream, stream, a))
-        else if (checkLastChar(a) = 2) then find(b, stringToStrOutputContinueMain(mainStream, a))
+        else if (checkLastChar(a) = 2) then find(b, stringToStrOutputContinueMain(mainStream, "\n"^a))
+        else find(b, 0)
+        | "char" => if (checkLastChar(a) = 1) then find(b, stringToHeader(headerStream, stream, a))
+        else find(b, 0)
+        | "void" => if (checkLastChar(a) = 1) then find(b, stringToHeader(headerStream, stream, a))
+        else find(b, 0)
+        | "bool" => if (checkLastChar(a) = 1) then find(b, stringToHeader(headerStream, stream, a))
+        else find(b, 0)
+        | "double" => if (checkLastChar(a) = 1) then find(b, stringToHeader(headerStream, stream, a))
         else find(b, 0)
         | _ => find(b, 0))
 |   find(a::b,1) =
@@ -114,5 +141,6 @@ fun find(nil,0) = nil
 
 find (file,0);
 val close = TextIO.closeOut(stream);
+val _ = TextIO.output(headerStream, "\n#endif\n");
 val close = TextIO.closeOut(headerStream);
 val close = TextIO.closeOut(mainStream);

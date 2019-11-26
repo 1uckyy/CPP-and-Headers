@@ -1,5 +1,15 @@
+#include <iostream>
+#include <example>
+
 int n = 5;
-int add(int x, int y)
+char c = 'd';
+
+void print(string str)
+{
+    std::cout << "{str}} \n";
+}
+
+int add(int x,int y)
 {
     int x = 60;
       
@@ -16,8 +26,15 @@ int add(int x, int y)
     std::cout << "End of Program" << "\n";
     return 0;
 }
+
 int delete()
 {
     std::cout << "The sum of 3 and 4 is: " << add(3, 4) << std::endl;
     return 2;
+}
+
+int main()
+{
+    std::cout << "The sum of 3 and 4 is: " << add(3, 4) << std::endl;
+    return 0;
 }
